@@ -89,13 +89,18 @@ function teamView(k){
   const fin=Object.entries(t.fin||{}).map(([l,v])=>`<tr><td>${esc(l)}</td><td class="num">${fmt(v)} M</td></tr>`).join("");
   const th=`<thead><tr><th class="ns">Jugador</th><th class="num ns">Salario</th><th class="num ns">Años</th><th class="num ns">Edad</th></tr></thead>`;
   const R=(t.rights||[]).length?`<h3>Derechos</h3><div class="tablebox"><table>${th}<tbody>${ptable(t.rights)}</tbody></table></div>`:"";
+  const pk=[...(t.picks||[])].sort((a,b)=>a.year-b.year||a.rnd-b.rnd||(a.pick??999)-(b.pick??999));
+  const PK=pk.length?`<h3>Picks</h3><div class="tablebox"><table><thead><tr><th class="ns">Ronda</th><th class="num ns">Pick</th><th class="ns">Origen</th><th class="num ns">Salario</th></tr></thead><tbody>${pk.map(p=>`<tr><td>${p.year} · R${p.rnd}</td><td class="num">${p.pick!=null?"#"+p.pick:"–"}</td>
+   <td class="nm">${p.from?esc(short(p.from)):`<span class="empty">Propio</span>`}</td><td class="num">${p.sal!=null?fmt(p.sal)+" M":"–"}</td></tr>`).join("")}</tbody></table></div>`:"";
+  const z=v=>v?fmt(v)+" M":"–";
+  const CT=(t.cuts||[]).length?`<h3>Cortados</h3><div class="tablebox"><table><thead><tr><th class="ns">Jugador</th><th class="num ns">Ahora</th><th class="num ns">S+1</th><th class="num ns">S+2</th></tr></thead><tbody>${t.cuts.map(c=>`<tr><td class="nm">${esc(c.name)}</td><td class="num">${z(c.now)}</td><td class="num">${z(c.s1)}</td><td class="num">${z(c.s2)}</td></tr>`).join("")}</tbody></table></div>`:"";
   return `<a class="btn" href="#">‹ Todos los equipos</a>
   <div class="head"><h2>${esc(short(t.name))}</h2><div class="sub">${esc(t.gm||"")}${t.record?" · Récord "+esc(t.record):""}</div>
    <div class="big c-${level(t.libre)}">${fmt(t.libre)} M <span class="sub">libre de ${fmt(cap,0)} M</span></div>${bar(t.libre,cap,10)}
    <div class="meta"><span>${P.length} de ${max} jugadores</span><span>Salarios ${fmt(t.salarios)} M</span></div>${warn}</div>
   <div class="tablebox"><table>${th}<tbody>${ptable(P)||`<tr><td colspan="4" class="empty">Sin jugadores.</td></tr>`}</tbody>
    <tfoot><tr><td>Total</td><td class="num">${fmt(tot)} M</td><td></td><td></td></tr></tfoot></table></div>
-  ${R}${fin?`<h3>Finanzas</h3><div class="tablebox"><table><tbody>${fin}</tbody></table></div>`:""}`;
+  ${R}${PK}${CT}${fin?`<h3>Finanzas</h3><div class="tablebox"><table><tbody>${fin}</tbody></table></div>`:""}`;
 }
 function render(){
   if(!D)return;

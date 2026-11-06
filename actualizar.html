@@ -79,19 +79,29 @@ async function readSheet(get,name){
 const isStr=v=>typeof v==="string"&&v.trim()!=="";
 const num=v=>typeof v==="number"&&isFinite(v)?v:null;
 function extract(rows){
-  const teams=[];let cur=null,zone=null,fin=false;
+  const teams=[];let cur=null,zone=null,fin=false,cut=false;
   const maxR=Math.max(...Object.keys(rows).map(Number));
   for(let r=1;r<=maxR;r++){
     const R=rows[r];if(!R)continue;
     if(/^DM\d+$/.test(R[1]||"")&&/^\d+\s*-\s*\d+$/.test(R[2]||"")&&isStr(R[20])){
-      cur={abbr:R[3]||"",name:R[20].trim(),gm:((/\(([^)]*)\)\s*$/.exec(R[20])||[])[1]||""),record:R[2],fin:{},players:[],rights:[]};
-      teams.push(cur);zone="players";fin=false;continue;
+      cur={abbr:R[3]||"",name:R[20].trim(),gm:((/\(([^)]*)\)\s*$/.exec(R[20])||[])[1]||""),record:R[2],fin:{},players:[],rights:[],picks:[],cuts:[]};
+      teams.push(cur);zone="players";fin=false;cut=false;continue;
     }
     if(!cur)continue;
     if(R[20]==="Información Financiera"){fin=true}
     else if(fin&&isStr(R[20])){
       if(/^Información/.test(R[20]))fin=false;
       else if(num(R[21])!==null)cur.fin[R[20].trim()]=Math.round(R[21]*100)/100;
+    }
+    if(num(R[14])!==null&&R[14]>=1&&num(R[15])!==null&&R[15]>=2000&&isStr(R[16])){
+      const own=R[16].trim()===cur.name;
+      cur.picks.push({rnd:R[14],year:R[15],from:own?"":R[16].trim(),pick:num(R[17]),sal:num(R[18])});
+    }
+    if(isStr(R[16])&&/^CORTADOS/.test(R[16])){cut=true}
+    if(cut&&R[15]==="TEAM")cut=false;
+    if(cut&&isStr(R[16])&&!/^CORTADOS/.test(R[16])){
+      const c=num(R[15])||0,a=num(R[17])||0,b=num(R[18])||0;
+      cur.cuts.push({name:R[16].trim(),now:Math.round(c*100)/100,s1:Math.round(a*100)/100,s2:Math.round(b*100)/100});
     }
     if(isStr(R[2])&&/^DERECHOS/.test(R[2])){zone="rights";continue}
     if(isStr(R[2])&&R[2]!=="Jugador"&&num(R[3])!==null){
@@ -122,7 +132,8 @@ $("#f").addEventListener("change",async e=>{
     out={meta:{liga:CONFIG.liga,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
     $("#stand").value=standFromName(file.name)||new Date(file.lastModified).toLocaleDateString("es-ES",{day:"numeric",month:"long"});
     const np=teams.reduce((s,t)=>s+t.players.length,0);
-    $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores</span><br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
+    const nk=teams.reduce((s,t)=>s+t.picks.length,0);
+    $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores, ${nk} picks</span><br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
     $("#msg").textContent=file.name;$("#res").hidden=false;
   }catch(err){$("#msg").className="err";$("#msg").textContent="Error: "+err.message}
 });
