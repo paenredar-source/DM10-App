@@ -133,8 +133,8 @@ const tTeam=k=>D.teams.find(t=>key(t)===k);
 function side(s){
   const t=tTeam(tr[s]);if(!t)return null;const S=tr.sel[s];
   const out=t.players.filter(p=>S.has("p:"+p.name));
-  const pk=(t.picks||[]).map((p,i)=>({...p,i})).filter(p=>S.has("k:"+p.i));
-  return{t,out,pk,sent:out.reduce((a,p)=>a+p.sal,0),extra:pk.length+(t.rights||[]).filter(r=>S.has("r:"+r.name)).length};
+  const pk=(t.picks||[]).map((p,i)=>({...p,i})).filter(p=>S.has("k:"+p.i)),rt=(t.rights||[]).filter(r=>S.has("r:"+r.name));
+  return{t,out,pk,rt,sent:out.reduce((a,p)=>a+p.sal,0),extra:pk.length+rt.length};
 }
 function panel(s){
   const t=tTeam(tr[s]),S=tr.sel[s],o=s==="a"?"b":"a";
@@ -150,8 +150,13 @@ function panel(s){
   }else body=`<div class="empty" style="padding:12px">Elige un equipo.</div>`;
   return `<div class="tpanel"><div class="tph"><span class="lbl">${s==="a"?"A":"B"}</span><select data-sel="${s}"><option value="">Elegir equipo…</option>${opts}</select></div>${body}</div>`;
 }
+async function copyText(s){
+  try{await navigator.clipboard.writeText(s);return true}
+  catch(e){const ta=document.createElement("textarea");ta.value=s;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(_){}ta.remove();return ok}
+}
+let tradeText="";
 function tradeView(){
-  const A=side("a"),B=side("b"),max=D.meta.rosterMax;let sum;
+  const A=side("a"),B=side("b"),max=D.meta.rosterMax;let sum;tradeText="";
   if(!A||!B)sum=`<div class="tsum"><div class="tv" style="color:var(--muted)">Elige dos equipos y marca lo que envía cada uno.</div></div>`;
   else{
     const diff=Math.abs(A.sent-B.sent),tol=Math.max(2,.25*Math.max(A.sent,B.sent)),ok=diff<=tol+1e-9,any=A.out.length+B.out.length+A.extra+B.extra>0;
@@ -175,10 +180,19 @@ function tradeView(){
     });
     const W=rows.flatMap(r=>r.warns),cls=!any?"":(!ok||V.length)?"bad":W.length?"warn":"good";
     const v=!any?"Marca jugadores o picks para ver el resultado.":(ok&&V.length)?`✗ Restricción de picks para nuevo GM · salarios equiparados (diferencia ${fmt(diff)} M)`:ok?`${W.length?"⚠ Salarios equiparados, pero revisa cap/plantilla":"✓ Salarios equiparados"} · diferencia ${fmt(diff)} M (máx. ${fmt(tol)} M)`:`✗ No cumple salarios equiparados · diferencia ${fmt(diff)} M, máximo ${fmt(tol)} M`;
+    if(any){
+      const items=x=>[...x.out.map(p=>`• ${p.name} (${p.pos||"?"}) · ${fmt(p.sal)} M · ${p.yrs??"?"} año${p.yrs===1?"":"s"}`),...x.pk.map(p=>`• Pick ${p.year} R${p.rnd}${p.pick!=null?" #"+p.pick:""}${p.from?" (de "+short(p.from)+")":""}`),...x.rt.map(r=>`• Derechos: ${r.name}`)].join("\n")||"• (nada)";
+      const lib=x=>x.t.libre+x.sent-(x===A?B:A).sent,nn=x=>x.t.players.length-x.out.length+(x===A?B:A).out.length,nm=x=>short(x.t.name);
+      tradeText=[`*TRADE ${D.meta.liga||"DM10"}*`,"",`*${nm(A)}* envía:`,items(A),"",`*${nm(B)}* envía:`,items(B),"",
+        `Salarios: ${fmt(A.sent)} M ⇄ ${fmt(B.sent)} M · diferencia ${fmt(diff)} M (máx. ${fmt(tol)} M) ${ok?"✓":"✗ no cumple salarios equiparados"}`,
+        `Cap libre: ${nm(A)} ${fmt(A.t.libre)} → ${fmt(lib(A))} M · ${nm(B)} ${fmt(B.t.libre)} → ${fmt(lib(B))} M`,
+        `Plantilla: ${nm(A)} ${A.t.players.length} → ${nn(A)} · ${nm(B)} ${B.t.players.length} → ${nn(B)}`,
+        ...[...V,...W].map(w=>"⚠ "+w.replace(/&amp;/g,"&"))].join("\n");
+    }
     sum=`<div class="tsum ${cls}"><div class="tv">${v}</div><table><thead><tr><th>Equipo</th><th class="num">Envía</th><th class="num">Recibe</th><th class="num">Libre M</th><th class="num">Jug.</th></tr></thead><tbody>${rows.map(r=>r.html).join("")}</tbody></table>${any?[...V,...W].map(w=>`<div class="tw">${w}</div>`).join(""):""}${any&&V.length?`<div class="note">El SubComisionado puede permitirlo de forma excepcional.</div>`:""}</div>`;
   }
   return `<a class="btn" href="#">‹ Todos los equipos</a>
-  <div class="tools"><button class="btn" data-act="swap">⇄ Intercambiar A y B</button><button class="btn" data-act="clear">Limpiar</button></div>
+  <div class="tools"><button class="btn" data-act="swap">⇄ Intercambiar A y B</button><button class="btn" data-act="clear">Limpiar</button>${tradeText?`<button class="btn" data-act="copy">📋 Copiar resumen</button>${navigator.share?`<button class="btn" data-act="share">Compartir</button>`:""}`:""}</div>
   ${sum}${panel("a")}${panel("b")}
   <div class="note">Regla: la diferencia entre lo enviado por cada parte no puede superar el 25 % de la cantidad mayor, o 2 M como máximo. Picks y derechos no cuentan como salario. «Nuevo GM» se marca solo para los managers Rookie de la hoja Managers; puedes quitarlo (p. ej. pasados los 3 meses) o ponerlo a mano.</div>`;
 }
@@ -254,9 +268,14 @@ document.addEventListener("click",e=>{
   const th=e.target.closest("th[data-s]"),r=e.target.closest("tr[data-t]"),fh=e.target.closest("th[data-f]"),ph=e.target.closest("th[data-p]"),rh=e.target.closest("th[data-r]"),ch=e.target.closest("button[data-c]");
   const ac=e.target.closest("[data-act]"),tb=e.target.closest("[data-trade]");
   if(ac){
-    if(ac.dataset.act==="swap"){[tr.a,tr.b]=[tr.b,tr.a];[tr.sel.a,tr.sel.b]=[tr.sel.b,tr.sel.a];[tr.ngm.a,tr.ngm.b]=[tr.ngm.b,tr.ngm.a]}
-    else tr={a:"",b:"",sel:{a:new Set(),b:new Set()},ngm:{a:false,b:false}};
-    render();
+    const act=ac.dataset.act;
+    if(act==="copy"){const old=ac.textContent;copyText(tradeText).then(ok=>{ac.textContent=ok?"✓ Copiado":"No se pudo copiar";setTimeout(()=>{ac.textContent=old},1800)})}
+    else if(act==="share"){navigator.share({text:tradeText}).catch(()=>{})}
+    else{
+      if(act==="swap"){[tr.a,tr.b]=[tr.b,tr.a];[tr.sel.a,tr.sel.b]=[tr.sel.b,tr.sel.a];[tr.ngm.a,tr.ngm.b]=[tr.ngm.b,tr.ngm.a]}
+      else tr={a:"",b:"",sel:{a:new Set(),b:new Set()},ngm:{a:false,b:false}};
+      render();
+    }
   }
   else if(tb){const k=tb.dataset.trade;if(tr.b===k){tr.b="";tr.sel.b=new Set();tr.ngm.b=false}if(tr.a!==k){tr.a=k;tr.sel.a=new Set();tr.ngm.a=!!(tTeam(k)||{}).rookie}location.hash="trade"}
   else if(ch){pf=pf===ch.dataset.c?"":ch.dataset.c;render()}
