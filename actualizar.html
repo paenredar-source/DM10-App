@@ -29,7 +29,7 @@ button:disabled{opacity:.4;cursor:default}.err{color:var(--bad);font-weight:600}
 </div>
 </div>
 <script>
-const CONFIG={liga:"DM10",cap:120,rosterMax:14,hoja:"ROSTERS"};
+const CONFIG={liga:"DM10",cap:120,rosterMax:14,hoja:"ROSTERS",hojaLibres:"AGENTES LIBRES"};
 const td=new TextDecoder();
 /* ---- ZIP (solo lo necesario) ---- */
 async function unzip(buf){
@@ -115,6 +115,18 @@ function extract(rows){
     return{...t,salarios:sal,libre};
   });
 }
+function extractLibres(rows){
+  const H=rows[1]||{},ix={};for(const[k,v]of Object.entries(H))if(typeof v==="string")ix[v.trim()]=+k;
+  if(ix["Jugador"]===undefined)throw new Error("Columna Jugador no encontrada");
+  const g=(R,n)=>ix[n]===undefined?null:R[ix[n]],out=[],maxR=Math.max(...Object.keys(rows).map(Number));
+  for(let r=2;r<=maxR;r++){
+    const R=rows[r];if(!R)continue;const nm=g(R,"Jugador");if(!isStr(nm))continue;
+    const tm=g(R,"TEAM");if(isStr(tm)&&/^DM\d+\s*-/.test(tm))continue; /* ya tiene equipo */
+    const pos=g(R,"L. DM"),inj=g(R,"Lesión del jugador");
+    out.push({name:nm.trim(),pos:isStr(pos)?pos.trim():"",fppg:num(g(R,"FPPG")),fppm:num(g(R,"FPPM")),age:num(g(R,"Edad")),inj:isStr(inj)?inj.trim():""});
+  }
+  return out.sort((a,b)=>(b.fppg??-99)-(a.fppg??-99));
+}
 function standFromName(n){
   const m=/(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)[_ ]+(\d{1,2})/i.exec(n);
   return m?`${+m[2]} de ${m[1].toLowerCase()}`:"";
@@ -128,12 +140,14 @@ $("#f").addEventListener("change",async e=>{
     const get=await unzip(await file.arrayBuffer());
     const teams=extract(await readSheet(get,CONFIG.hoja));
     if(!teams.length)throw new Error("No se han encontrado equipos en la hoja "+CONFIG.hoja);
+    let libres=[],avisoL="";
+    try{libres=extractLibres(await readSheet(get,CONFIG.hojaLibres))}catch(err){avisoL=" (agentes libres: "+err.message+")"}
     const season=/Season_(\d{4})_(\d{4})/.exec(file.name);
-    out={meta:{liga:CONFIG.liga,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
+    out={libres,meta:{liga:CONFIG.liga,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
     $("#stand").value=standFromName(file.name)||new Date(file.lastModified).toLocaleDateString("es-ES",{day:"numeric",month:"long"});
     const np=teams.reduce((s,t)=>s+t.players.length,0);
     const nk=teams.reduce((s,t)=>s+t.picks.length,0);
-    $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores, ${nk} picks</span><br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
+    $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores, ${nk} picks, ${libres.length} agentes libres</span>${avisoL?`<br><span class="err">${avisoL}</span>`:""}<br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
     $("#msg").textContent=file.name;$("#res").hidden=false;
   }catch(err){$("#msg").className="err";$("#msg").textContent="Error: "+err.message}
 });
