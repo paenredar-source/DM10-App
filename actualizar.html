@@ -29,7 +29,7 @@ button:disabled{opacity:.4;cursor:default}.err{color:var(--bad);font-weight:600}
 </div>
 </div>
 <script>
-const CONFIG={liga:"DM10",cap:120,rosterMax:14,hoja:"ROSTERS",hojaLibres:"AGENTES LIBRES"};
+const CONFIG={liga:"DM10",cap:120,rosterMax:14,hoja:"ROSTERS",hojaLibres:"AGENTES LIBRES",hojaManagers:"MANAGERS"};
 const td=new TextDecoder();
 /* ---- ZIP (solo lo necesario) ---- */
 async function unzip(buf){
@@ -105,8 +105,8 @@ function extract(rows){
     }
     if(isStr(R[2])&&/^DERECHOS/.test(R[2])){zone="rights";continue}
     if(isStr(R[2])&&R[2]!=="Jugador"&&num(R[3])!==null){
-      const p={name:R[2].trim(),pos:isStr(R[1])?R[1]:"",sal:Math.round(R[3]*100)/100,yrs:num(R[4]),age:num(R[6]),fppg:num(R[7])};
-      if(zone==="players")cur.players.push(p);else if(zone==="rights")cur.rights.push({name:p.name,pos:p.pos,sal:p.sal,yrs:p.yrs,age:p.age});
+      const p={name:R[2].trim(),pos:isStr(R[1])?R[1]:"",sal:Math.round(R[3]*100)/100,yrs:num(R[4]),age:num(R[6]),fppg:num(R[7]),fppm:num(R[8]),mpg:num(R[11])};
+      if(zone==="players")cur.players.push(p);else if(zone==="rights")cur.rights.push({name:p.name,pos:p.pos,sal:p.sal,yrs:p.yrs,age:p.age,fppg:p.fppg,fppm:p.fppm,mpg:p.mpg});
     }
   }
   return teams.map(t=>{
@@ -123,9 +123,17 @@ function extractLibres(rows){
     const R=rows[r];if(!R)continue;const nm=g(R,"Jugador");if(!isStr(nm))continue;
     const tm=g(R,"TEAM");if(isStr(tm)&&/^DM\d+\s*-/.test(tm))continue; /* ya tiene equipo */
     const pos=g(R,"L. DM"),inj=g(R,"Lesión del jugador");
-    out.push({name:nm.trim(),pos:isStr(pos)?pos.trim():"",fppg:num(g(R,"FPPG")),fppm:num(g(R,"FPPM")),age:num(g(R,"Edad")),inj:isStr(inj)?inj.trim():""});
+    out.push({name:nm.trim(),pos:isStr(pos)?pos.trim():"",fppg:num(g(R,"FPPG")),fppm:num(g(R,"FPPM")),mpg:num(g(R,"MPG")),age:num(g(R,"Edad")),inj:isStr(inj)?inj.trim():""});
   }
   return out.sort((a,b)=>(b.fppg??-99)-(a.fppg??-99));
+}
+const nkey=s=>String(s||"").replace(/\s*\([^)]*\)\s*$/,"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+function extractManagers(rows){ /* solo equipo y estado; no se guarda ningún e-mail */
+  const H=rows[1]||{},ix={};for(const[k,v]of Object.entries(H))if(typeof v==="string")ix[v.trim().toUpperCase()]=+k;
+  if(ix["TEAM"]===undefined||ix["STATUS"]===undefined)throw new Error("Columnas TEAM/Status no encontradas");
+  const m=new Map(),maxR=Math.max(...Object.keys(rows).map(Number));
+  for(let r=2;r<=maxR;r++){const R=rows[r];if(!R||!isStr(R[ix["TEAM"]]))continue;m.set(nkey(R[ix["TEAM"]]),isStr(R[ix["STATUS"]])?R[ix["STATUS"]].trim():"")}
+  return m;
 }
 function standFromName(n){
   const m=/(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)[_ ]+(\d{1,2})/i.exec(n);
@@ -142,12 +150,17 @@ $("#f").addEventListener("change",async e=>{
     if(!teams.length)throw new Error("No se han encontrado equipos en la hoja "+CONFIG.hoja);
     let libres=[],avisoL="";
     try{libres=extractLibres(await readSheet(get,CONFIG.hojaLibres))}catch(err){avisoL=" (agentes libres: "+err.message+")"}
+    let avisoM="";
+    try{const mg=extractManagers(await readSheet(get,CONFIG.hojaManagers));let sin=0;
+      for(const t of teams){const s=mg.get(nkey(t.name));if(s===undefined)sin++;t.rookie=(s||"").toLowerCase()==="rookie"}
+      if(sin)avisoM=` (${sin} equipos sin coincidencia en Managers)`;
+    }catch(err){avisoM=" (managers: "+err.message+")"}
     const season=/Season_(\d{4})_(\d{4})/.exec(file.name);
     out={libres,meta:{liga:CONFIG.liga,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
     $("#stand").value=standFromName(file.name)||new Date(file.lastModified).toLocaleDateString("es-ES",{day:"numeric",month:"long"});
     const np=teams.reduce((s,t)=>s+t.players.length,0);
     const nk=teams.reduce((s,t)=>s+t.picks.length,0);
-    $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores, ${nk} picks, ${libres.length} agentes libres</span>${avisoL?`<br><span class="err">${avisoL}</span>`:""}<br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
+    $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores, ${nk} picks, ${libres.length} agentes libres, ${teams.filter(t=>t.rookie).length} GMs rookies</span>${(avisoL+avisoM)?`<br><span class="err">${avisoL+avisoM}</span>`:""}<br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
     $("#msg").textContent=file.name;$("#res").hidden=false;
   }catch(err){$("#msg").className="err";$("#msg").textContent="Error: "+err.message}
 });

@@ -32,6 +32,22 @@ a.tl{color:var(--acc-d);font-weight:600;text-decoration:none}
 .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .pcount{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}.pcount span{font-size:14px;color:var(--muted)}
 .tablebox.p th,.tablebox.p td{padding:9px 5px}
+.tablebox.p table.wide{min-width:600px}
+.tablebox.p .c1{position:sticky;left:0;z-index:1;background:var(--card);width:44px;min-width:44px;max-width:44px}
+.tablebox.p .c2{position:sticky;left:44px;z-index:1;background:var(--card);min-width:112px;box-shadow:1px 0 0 var(--line)}
+.tsum{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--card);border:2px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,.14)}
+.tsum.good{border-color:var(--good)}.tsum.warn{border-color:var(--warn)}.tsum.bad{border-color:var(--bad)}
+.tv{font-weight:600;margin-bottom:6px}.good .tv{color:var(--good)}.warn .tv{color:var(--warn)}.bad .tv{color:var(--bad)}
+.tsum table{font-size:14px;min-width:0}.tsum th{cursor:default;font-size:12px;padding:3px 4px;background:transparent;border-bottom:0}.tsum td{padding:3px 4px;border-bottom:0}
+.tw{font-size:13px;color:var(--bad);margin-top:6px}
+.tpanel{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.tph{display:flex;align-items:center;gap:8px;padding:10px;border-bottom:1px solid var(--line)}.tph .lbl{font:700 22px var(--title)}
+select{flex:1;min-width:0;font:500 16px var(--body);padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.it{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid var(--line);cursor:pointer}.it.on{background:color-mix(in srgb,var(--acc) 14%,var(--card))}
+.it input{accent-color:var(--acc);width:20px;height:20px;flex:none;margin:0}.it .in{flex:1;min-width:0}.it .iv{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;white-space:nowrap}
+.sec{font:700 16px var(--title);color:var(--muted);padding:8px 10px 4px;letter-spacing:.4px}
+.ngm{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}.ngm input{accent-color:var(--acc);width:18px;height:18px;margin:0}
+.tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}.tools .btn{margin:0}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .kpi b{display:block;font:700 28px/1.05 var(--title);font-variant-numeric:tabular-nums}.kpi span{color:var(--muted);font-size:13px}
@@ -85,6 +101,7 @@ function psort(list,k,d){
   });
 }
 const pdir=k=>k==="name"||k==="age"||k==="pos"?1:-1;
+const st=(p)=>`<td class="num">${p.fppg!=null?fmt(p.fppg):"–"}</td><td class="num">${p.fppm!=null?fmt(p.fppm,2):"–"}</td><td class="num">${p.mpg!=null?fmt(p.mpg):"–"}</td>`;
 const level=f=>f<=0?"bad":f<=10?"warn":"good";
 const bar=(f,cap,h)=>{const l=level(f);return `<div class="bar ${l==="good"?"":"bg-"+l}" ${h?`style="height:${h}px"`:""}><i style="width:${Math.max(0,Math.min(100,f/cap*100))}%"></i></div>`};
 const short=n=>String(n).replace(/\s*\([^)]*\)\s*$/,"");
@@ -102,13 +119,68 @@ function listView(){
    <td class="num">${t.players.length}<span class="empty"> / ${D.meta.rosterMax}</span></td></tr>`).join("");
   return `<div class="kpis"><div class="kpi"><b>${T.length}</b><span>Equipos</span></div>
    <div class="kpi"><b>${fmt(avg)} M</b><span>Libre medio</span></div><a class="kpi kpilink" href="#libres"><b>${(D.libres||[]).length}</b><span>Agentes libres ›</span></a></div>
+  <a class="btn" href="#trade">⇄ Simulador de trades</a>
   <div class="tablebox l"><table><thead><tr><th data-s="name">Equipo${arrow("name")}</th><th class="num" data-s="salarios">Sal. M${arrow("salarios")}</th>
    <th class="num" data-s="libre">Libre M${arrow("libre")}</th><th class="num" data-s="n">Jug.${arrow("n")}</th></tr></thead><tbody>${rows}</tbody></table></div>
   <div class="note">Toca un equipo para ver su plantilla. Pulsa las cabeceras para ordenar.</div>`;
 }
-function ptable(list){
-  return list.map(p=>`<tr><td>${pb(p.pos)}</td><td class="nm">${esc(p.name)}</td>
-   <td class="num">${fmt(p.sal)}</td><td class="num"><span class="badge y${p.yrs}">${p.yrs??"–"}</span></td><td class="num">${p.age??"–"}</td></tr>`).join("");
+function ptable(list,stats){
+  return list.map(p=>`<tr><td class="c1">${pb(p.pos)}</td><td class="nm c2">${esc(p.name)}</td>
+   <td class="num">${fmt(p.sal)}</td><td class="num"><span class="badge y${p.yrs}">${p.yrs??"–"}</span></td><td class="num">${p.age??"–"}</td>${stats?st(p):""}</tr>`).join("");
+}
+let tr={a:"",b:"",sel:{a:new Set(),b:new Set()},ngm:{a:false,b:false}};
+const tTeam=k=>D.teams.find(t=>key(t)===k);
+function side(s){
+  const t=tTeam(tr[s]);if(!t)return null;const S=tr.sel[s];
+  const out=t.players.filter(p=>S.has("p:"+p.name));
+  const pk=(t.picks||[]).map((p,i)=>({...p,i})).filter(p=>S.has("k:"+p.i));
+  return{t,out,pk,sent:out.reduce((a,p)=>a+p.sal,0),extra:pk.length+(t.rights||[]).filter(r=>S.has("r:"+r.name)).length};
+}
+function panel(s){
+  const t=tTeam(tr[s]),S=tr.sel[s],o=s==="a"?"b":"a";
+  const opts=[...D.teams].sort((x,y)=>short(x.name).localeCompare(short(y.name),"es")).map(x=>`<option value="${esc(key(x))}"${key(x)===tr[s]?" selected":""}${key(x)===tr[o]?" disabled":""}>${esc(short(x.name))}</option>`).join("");
+  let body="";
+  if(t){
+    body=`<label class="ngm"><input type="checkbox" data-ngm="${s}"${tr.ngm[s]?" checked":""}> Nuevo GM <span class="empty">${t.rookie?"(marcado como Rookie)":"(restricciones de 1ª ronda)"}</span></label>`;
+    const it=(id,left,name,sal,y)=>{const on=S.has(id);return `<label class="it${on?" on":""}"><input type="checkbox" data-s="${s}" data-i="${esc(id)}"${on?" checked":""}>${left}<span class="in">${name}</span><span class="iv">${sal}</span>${y}</label>`};
+    body+=`<div class="sec">Jugadores</div>`+[...t.players].sort((a,b)=>b.sal-a.sal).map(p=>it("p:"+p.name,pb(p.pos),esc(p.name),fmt(p.sal)+" M",`<span class="badge y${p.yrs}">${p.yrs??"–"}</span>`)).join("");
+    const pk=(t.picks||[]).map((p,i)=>({...p,i})).sort((a,b)=>a.year-b.year||a.rnd-b.rnd||(a.pick??999)-(b.pick??999));
+    if(pk.length)body+=`<div class="sec">Picks (sin valor salarial)</div>`+pk.map(p=>it("k:"+p.i,`<span class="pb">${p.year}</span>`,`R${p.rnd}${p.pick!=null?" #"+p.pick:""} · ${p.from?esc(short(p.from)):"Propio"}`,"","")).join("");
+    if((t.rights||[]).length)body+=`<div class="sec">Derechos (sin valor salarial)</div>`+t.rights.map(r=>it("r:"+r.name,pb(r.pos),esc(r.name),"","")).join("");
+  }else body=`<div class="empty" style="padding:12px">Elige un equipo.</div>`;
+  return `<div class="tpanel"><div class="tph"><span class="lbl">${s==="a"?"A":"B"}</span><select data-sel="${s}"><option value="">Elegir equipo…</option>${opts}</select></div>${body}</div>`;
+}
+function tradeView(){
+  const A=side("a"),B=side("b"),max=D.meta.rosterMax;let sum;
+  if(!A||!B)sum=`<div class="tsum"><div class="tv" style="color:var(--muted)">Elige dos equipos y marca lo que envía cada uno.</div></div>`;
+  else{
+    const diff=Math.abs(A.sent-B.sent),tol=Math.max(2,.25*Math.max(A.sent,B.sent)),ok=diff<=tol+1e-9,any=A.out.length+B.out.length+A.extra+B.extra>0;
+    const rows=[[A,B],[B,A]].map(([x,y])=>{
+      const libre=x.t.libre+x.sent-y.sent,n=x.t.players.length-x.out.length+y.out.length;
+      const warns=[];
+      if(libre<-1e-9){const te=(x.t.fin||{})["Excepciones TRADE (4M$)"];warns.push(`${esc(short(x.t.name))}: cap superado en ${fmt(-libre)} M${te?` (tiene ${te} Excepciones de TRADE de 4 M)`:""}`)}
+      if(n>max)warns.push(`${esc(short(x.t.name))}: ${n} jugadores (máx. ${max})`);
+      const tag=x.t.abbr||short(x.t.name);
+      return{warns,html:`<tr><td><b>${esc(tag)}</b></td><td class="num">${fmt(x.sent)}</td><td class="num">${fmt(y.sent)}</td><td class="num c-${level(libre)}">${fmt(x.t.libre)} → <b>${fmt(libre)}</b></td><td class="num${n>max?" c-bad":""}">${x.t.players.length} → <b>${n}</b></td></tr>`};
+    });
+    const yrs=D.teams.flatMap(x=>(x.picks||[]).map(p=>p.year)),cur=yrs.length?Math.min(...yrs):0;
+    const V=[A,B].flatMap((x,ix)=>{
+      if(!tr.ngm[ix?"b":"a"])return[];
+      const tag=esc(short(x.t.name));
+      return x.pk.filter(p=>p.rnd===1&&!p.from).flatMap(p=>{
+        if(p.year===cur&&p.pick!=null&&p.pick<=15)return[`${tag}: 1ª ronda propia ${p.year} (#${p.pick}), pick 1–15: un nuevo GM no puede traspasarla si ya la tenía al hacerse cargo del equipo`];
+        if(p.year===cur+1)return[`${tag}: 1ª ronda propia ${p.year}: un nuevo GM no puede traspasarla en sus 3 primeros meses`];
+        return[];
+      });
+    });
+    const W=rows.flatMap(r=>r.warns),cls=!any?"":(!ok||V.length)?"bad":W.length?"warn":"good";
+    const v=!any?"Marca jugadores o picks para ver el resultado.":(ok&&V.length)?`✗ Restricción de picks para nuevo GM · salarios equiparados (diferencia ${fmt(diff)} M)`:ok?`${W.length?"⚠ Salarios equiparados, pero revisa cap/plantilla":"✓ Salarios equiparados"} · diferencia ${fmt(diff)} M (máx. ${fmt(tol)} M)`:`✗ No cumple salarios equiparados · diferencia ${fmt(diff)} M, máximo ${fmt(tol)} M`;
+    sum=`<div class="tsum ${cls}"><div class="tv">${v}</div><table><thead><tr><th>Equipo</th><th class="num">Envía</th><th class="num">Recibe</th><th class="num">Libre M</th><th class="num">Jug.</th></tr></thead><tbody>${rows.map(r=>r.html).join("")}</tbody></table>${any?[...V,...W].map(w=>`<div class="tw">${w}</div>`).join(""):""}${any&&V.length?`<div class="note">El SubComisionado puede permitirlo de forma excepcional.</div>`:""}</div>`;
+  }
+  return `<a class="btn" href="#">‹ Todos los equipos</a>
+  <div class="tools"><button class="btn" data-act="swap">⇄ Intercambiar A y B</button><button class="btn" data-act="clear">Limpiar</button></div>
+  ${sum}${panel("a")}${panel("b")}
+  <div class="note">Regla: la diferencia entre lo enviado por cada parte no puede superar el 25 % de la cantidad mayor, o 2 M como máximo. Picks y derechos no cuentan como salario. «Nuevo GM» se marca solo para los managers Rookie de la hoja Managers; puedes quitarlo (p. ej. pasados los 3 meses) o ponerlo a mano.</div>`;
 }
 const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 function libresView(){
@@ -117,12 +189,12 @@ function libresView(){
     return r||(b.fppg??-99)-(a.fppg??-99);
   });
   const ar=x=>fs.key===x?(fs.dir>0?" ↑":" ↓"):"";
-  const rows=L.map(p=>`<tr><td>${pb(p.pos)}</td><td class="nm">${esc(p.name)}${p.inj?`<span class="pos">${esc(p.inj)}</span>`:""}</td>
-   <td class="num">${p.fppg!=null?fmt(p.fppg):"–"}</td><td class="num">${p.fppm!=null?fmt(p.fppm,2):"–"}</td><td class="num">${p.age??"–"}</td></tr>`).join("");
+  const rows=L.map(p=>`<tr><td class="c1">${pb(p.pos)}</td><td class="nm c2">${esc(p.name)}${p.inj?`<span class="pos">${esc(p.inj)}</span>`:""}</td>
+   ${st(p)}<td class="num">${p.age??"–"}</td></tr>`).join("");
   return `<a class="btn" href="#">‹ Todos los equipos</a>
   <div class="head"><h2>Agentes libres</h2><div class="big">${L.length} <span class="sub">sin equipo</span></div></div>
-  <div class="tablebox p"><table><thead><tr><th data-f="pos">Pos.${ar("pos")}</th><th data-f="name">Jugador${ar("name")}</th><th class="num" data-f="fppg">FPPG${ar("fppg")}</th><th class="num" data-f="fppm">FPPM${ar("fppm")}</th><th class="num" data-f="age">Edad${ar("age")}</th></tr></thead>
-  <tbody>${rows||`<tr><td colspan="5" class="empty">No hay agentes libres.</td></tr>`}</tbody></table></div>`;
+  <div class="tablebox p"><table class="wide"><thead><tr><th class="c1" data-f="pos">Pos.${ar("pos")}</th><th class="c2" data-f="name">Jugador${ar("name")}</th><th class="num" data-f="fppg">FPPG${ar("fppg")}</th><th class="num" data-f="fppm">FPPM${ar("fppm")}</th><th class="num" data-f="mpg">MPG${ar("mpg")}</th><th class="num" data-f="age">Edad${ar("age")}</th></tr></thead>
+  <tbody>${rows||`<tr><td colspan="6" class="empty">No hay agentes libres.</td></tr>`}</tbody></table></div>`;
 }
 function searchView(){
   const toks=norm(query).split(/\s+/).filter(Boolean),first=norm(query).trim();
@@ -134,16 +206,16 @@ function searchView(){
     if(k==="name")r=(norm(a.name).startsWith(first)?0:1)-(norm(b.name).startsWith(first)?0:1)||a.name.localeCompare(b.name,"es")*d;
     else if(k==="pos")r=prk(a.pos,b.pos,d);
     else if(k==="team")r=(a.team?short(a.team.name):"~").localeCompare(b.team?short(b.team.name):"~","es")*d;
-    else r=(nul(a.team?a[k]:null,d)-nul(b.team?b[k]:null,d))*d;
+    else{const v=p=>(k==="sal"||k==="yrs")&&!p.team?null:p[k];r=(nul(v(a),d)-nul(v(b),d))*d}
     return r||a.name.localeCompare(b.name,"es");
   });
   const MAX=200,ar=x=>rs.key===x?(rs.dir>0?" ↑":" ↓"):"";
-  const rows=hits.slice(0,MAX).map(p=>`<tr><td>${pb(p.pos)}</td><td class="nm">${esc(p.name)}</td>
+  const rows=hits.slice(0,MAX).map(p=>`<tr><td class="c1">${pb(p.pos)}</td><td class="nm c2">${esc(p.name)}</td>
    <td class="nm">${p.team?`<a class="tl" href="#team=${encodeURIComponent(key(p.team))}">${esc(short(p.team.name))}</a>`:`<span class="libre">Libre</span>`}</td>
-   <td class="num">${p.team?fmt(p.sal):"–"}</td><td class="num">${p.team?`<span class="badge y${p.yrs}">${p.yrs??"–"}</span>`:"–"}</td></tr>`).join("");
+   <td class="num">${p.team?fmt(p.sal):"–"}</td><td class="num">${p.team?`<span class="badge y${p.yrs}">${p.yrs??"–"}</span>`:"–"}</td>${st(p)}</tr>`).join("");
   return `<div class="sub" style="margin-bottom:8px">${hits.length} resultado${hits.length===1?"":"s"}${pf?" · posición "+pf:""}${hits.length>MAX?` · mostrando los ${MAX} primeros, afina la búsqueda`:""}</div>
-  <div class="tablebox p"><table><thead><tr><th data-r="pos">Pos.${ar("pos")}</th><th data-r="name">Jugador${ar("name")}</th><th data-r="team">Equipo${ar("team")}</th><th class="num" data-r="sal">Sal. M${ar("sal")}</th><th class="num" data-r="yrs">Años${ar("yrs")}</th></tr></thead>
-  <tbody>${rows||`<tr><td colspan="5" class="empty">Ningún jugador encontrado.</td></tr>`}</tbody></table></div>`;
+  <div class="tablebox p"><table class="wide"><thead><tr><th class="c1" data-r="pos">Pos.${ar("pos")}</th><th class="c2" data-r="name">Jugador${ar("name")}</th><th data-r="team">Equipo${ar("team")}</th><th class="num" data-r="sal">Sal. M${ar("sal")}</th><th class="num" data-r="yrs">Años${ar("yrs")}</th><th class="num" data-r="fppg">FPPG${ar("fppg")}</th><th class="num" data-r="fppm">FPPM${ar("fppm")}</th><th class="num" data-r="mpg">MPG${ar("mpg")}</th></tr></thead>
+  <tbody>${rows||`<tr><td colspan="8" class="empty">Ningún jugador encontrado.</td></tr>`}</tbody></table></div>`;
 }
 function teamView(k){
   const t=D.teams.find(x=>key(x)===k);
@@ -153,7 +225,7 @@ function teamView(k){
   const warn=P.length>max?`<div class="err">Más de ${max} jugadores en la plantilla.</div>`:t.libre<0?`<div class="err">Cap superado en ${fmt(-t.libre)} M.</div>`:"";
   const fin=Object.entries(t.fin||{}).map(([l,v])=>`<tr><td>${esc(l)}</td><td class="num">${fmt(v)} M</td></tr>`).join("");
   const th0=`<thead><tr><th class="ns">Pos.</th><th class="ns">Jugador</th><th class="num ns">Sal. M</th><th class="num ns">Años</th><th class="num ns">Edad</th></tr></thead>`;
-  const th=`<thead><tr><th data-p="pos">Pos.${ar("pos")}</th><th data-p="name">Jugador${ar("name")}</th><th class="num" data-p="sal">Sal. M${ar("sal")}</th><th class="num" data-p="yrs">Años${ar("yrs")}</th><th class="num" data-p="age">Edad${ar("age")}</th></tr></thead>`;
+  const th=`<thead><tr><th class="c1" data-p="pos">Pos.${ar("pos")}</th><th class="c2" data-p="name">Jugador${ar("name")}</th><th class="num" data-p="sal">Sal. M${ar("sal")}</th><th class="num" data-p="yrs">Años${ar("yrs")}</th><th class="num" data-p="age">Edad${ar("age")}</th><th class="num" data-p="fppg">FPPG${ar("fppg")}</th><th class="num" data-p="fppm">FPPM${ar("fppm")}</th><th class="num" data-p="mpg">MPG${ar("mpg")}</th></tr></thead>`;
   const cnt=POS.map(c=>[c,t.players.filter(p=>p.pos===c).length]).filter(x=>x[1]);
   const R=(t.rights||[]).length?`<h3>Derechos</h3><div class="tablebox p"><table>${th0}<tbody>${ptable(t.rights)}</tbody></table></div>`:"";
   const pk=[...(t.picks||[])].sort((a,b)=>a.year-b.year||a.rnd-b.rnd||(a.pick??999)-(b.pick??999));
@@ -162,12 +234,12 @@ function teamView(k){
   const z=v=>v?fmt(v)+" M":"–";
   const CT=(t.cuts||[]).length?`<h3>Cortados</h3><div class="tablebox"><table><thead><tr><th class="ns">Jugador</th><th class="num ns">Ahora</th><th class="num ns">S+1</th><th class="num ns">S+2</th></tr></thead><tbody>${t.cuts.map(c=>`<tr><td class="nm">${esc(c.name)}</td><td class="num">${z(c.now)}</td><td class="num">${z(c.s1)}</td><td class="num">${z(c.s2)}</td></tr>`).join("")}</tbody></table></div>`:"";
   return `<a class="btn" href="#">‹ Todos los equipos</a>
-  <div class="head"><h2>${esc(short(t.name))}</h2><div class="sub">${esc(t.gm||"")}${t.record?" · Récord "+esc(t.record):""}</div>
+  <div class="head"><h2>${esc(short(t.name))}</h2><div class="sub">${esc(t.gm||"")}${t.rookie?" · Rookie":""}${t.record?" · Récord "+esc(t.record):""}</div>
    <div class="big c-${level(t.libre)}">${fmt(t.libre)} M <span class="sub">libre de ${fmt(cap,0)} M</span></div>${bar(t.libre,cap,10)}
    <div class="meta"><span>${P.length} de ${max} jugadores</span><span>Salarios ${fmt(t.salarios)} M</span></div>
-   <div class="pcount">${cnt.map(([c,n])=>`${pb(c)}<span>${n}</span>`).join("")}</div>${warn}</div>
-  <div class="tablebox p"><table>${th}<tbody>${ptable(P)||`<tr><td colspan="5" class="empty">Sin jugadores.</td></tr>`}</tbody>
-   <tfoot><tr><td></td><td>Total</td><td class="num">${fmt(tot)}</td><td></td><td></td></tr></tfoot></table></div>
+   <div class="pcount">${cnt.map(([c,n])=>`${pb(c)}<span>${n}</span>`).join("")}</div>${warn}<div style="margin-top:12px"><button class="btn" style="margin:0" data-trade="${esc(key(t))}">⇄ Simular trade con este equipo</button></div></div>
+  <div class="tablebox p"><table class="wide">${th}<tbody>${ptable(P,true)||`<tr><td colspan="8" class="empty">Sin jugadores.</td></tr>`}</tbody>
+   <tfoot><tr><td class="c1"></td><td class="c2">Total</td><td class="num">${fmt(tot)}</td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table></div>
   ${R}${PK}${CT}${fin?`<h3>Finanzas</h3><div class="tablebox"><table><tbody>${fin}</tbody></table></div>`:""}`;
 }
 function chips(){
@@ -176,16 +248,29 @@ function chips(){
 function render(){
   if(!D)return;chips();
   const h=decodeURIComponent(location.hash.slice(1));
-  $("#app").innerHTML=(query.trim()||pf)?searchView():h.startsWith("team=")?teamView(h.slice(5)):h==="libres"?libresView():listView();
+  $("#app").innerHTML=(query.trim()||pf)?searchView():h.startsWith("team=")?teamView(h.slice(5)):h==="libres"?libresView():h==="trade"?tradeView():listView();
 }
 document.addEventListener("click",e=>{
   const th=e.target.closest("th[data-s]"),r=e.target.closest("tr[data-t]"),fh=e.target.closest("th[data-f]"),ph=e.target.closest("th[data-p]"),rh=e.target.closest("th[data-r]"),ch=e.target.closest("button[data-c]");
-  if(ch){pf=pf===ch.dataset.c?"":ch.dataset.c;render()}
+  const ac=e.target.closest("[data-act]"),tb=e.target.closest("[data-trade]");
+  if(ac){
+    if(ac.dataset.act==="swap"){[tr.a,tr.b]=[tr.b,tr.a];[tr.sel.a,tr.sel.b]=[tr.sel.b,tr.sel.a];[tr.ngm.a,tr.ngm.b]=[tr.ngm.b,tr.ngm.a]}
+    else tr={a:"",b:"",sel:{a:new Set(),b:new Set()},ngm:{a:false,b:false}};
+    render();
+  }
+  else if(tb){const k=tb.dataset.trade;if(tr.b===k){tr.b="";tr.sel.b=new Set();tr.ngm.b=false}if(tr.a!==k){tr.a=k;tr.sel.a=new Set();tr.ngm.a=!!(tTeam(k)||{}).rookie}location.hash="trade"}
+  else if(ch){pf=pf===ch.dataset.c?"":ch.dataset.c;render()}
   else if(ph){const k=ph.dataset.p;ps=ps.key===k?{key:k,dir:-ps.dir}:{key:k,dir:pdir(k)};render()}
   else if(rh){const k=rh.dataset.r;rs=rs.key===k?{key:k,dir:-rs.dir}:{key:k,dir:k==="name"||k==="pos"||k==="team"?1:-1};render()}
   else if(fh){const k=fh.dataset.f;fs=fs.key===k?{key:k,dir:-fs.dir}:{key:k,dir:k==="name"||k==="age"||k==="pos"?1:-1};render()}
   else if(th){const k=th.dataset.s;sort=sort.key===k?{key:k,dir:-sort.dir}:{key:k,dir:k==="name"?1:-1};render()}
   else if(r)location.hash="team="+encodeURIComponent(r.dataset.t);
+});
+document.addEventListener("change",e=>{
+  const c=e.target.closest("input[data-s]"),s=e.target.closest("select[data-sel]"),g=e.target.closest("input[data-ngm]");
+  if(g){tr.ngm[g.dataset.ngm]=g.checked;render()}
+  else if(c){const S=tr.sel[c.dataset.s];S.has(c.dataset.i)?S.delete(c.dataset.i):S.add(c.dataset.i);render()}
+  else if(s){tr[s.dataset.sel]=s.value;tr.sel[s.dataset.sel]=new Set();tr.ngm[s.dataset.sel]=!!(tTeam(s.value)||{}).rookie;render()}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Enter"){const r=e.target.closest&&e.target.closest("tr[data-t]");if(r)location.hash="team="+encodeURIComponent(r.dataset.t)}});
 window.addEventListener("hashchange",()=>{query="";pf="";$("#q").value="";render();scrollTo(0,0)});
