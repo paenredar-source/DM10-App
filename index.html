@@ -8,8 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--paper:#f7f0e6;--card:#fffaf2;--ink:#2a190c;--muted:#7a6551;--line:#e2d3bf;--acc:#b0621f;--acc-d:#7a3f0e;--good:#3f7d3a;--warn:#b07d0a;--bad:#b3341f;
---title:"Barlow Condensed","Arial Narrow",Impact,sans-serif;--body:"Barlow",system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root{--paper:#1d130b;--card:#2a1d12;--ink:#f3e7d8;--muted:#b9a58f;--line:#43301f;--acc:#e0924a;--acc-d:#f2b27a;--good:#7bc477;--warn:#e6b84a;--bad:#ee7d6c}}
+--pg:#2f7fb8;--pf:#3f8a3a;--pc:#9a4fb0;--title:"Barlow Condensed","Arial Narrow",Impact,sans-serif;--body:"Barlow",system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--paper:#1d130b;--card:#2a1d12;--ink:#f3e7d8;--muted:#b9a58f;--line:#43301f;--acc:#e0924a;--acc-d:#f2b27a;--pg:#63a8de;--pf:#72c06a;--pc:#c28ad6;--good:#7bc477;--warn:#e6b84a;--bad:#ee7d6c}}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 var(--body)}
 .wrap{max-width:900px;margin:0 auto;padding:16px 14px 48px}
@@ -22,6 +22,16 @@ a{color:inherit}
 .kpilink{text-decoration:none;color:inherit;border-color:var(--acc);cursor:pointer}.kpilink:hover{background:color-mix(in srgb,var(--acc) 9%,var(--card))}
 a.tl{color:var(--acc-d);font-weight:600;text-decoration:none}
 .libre{display:inline-block;font:600 12px var(--body);padding:2px 8px;border-radius:99px;color:var(--good);border:1px solid var(--good)}
+.pb{display:inline-block;min-width:30px;text-align:center;font:700 14px/1 var(--title);letter-spacing:.3px;padding:4px 6px;border-radius:6px;border:1px solid var(--line);color:var(--ink)}
+.p-G{--c:var(--pg)}.p-F{--c:var(--pf)}.p-C{--c:var(--pc)}
+.pb.p-G,.pb.p-F,.pb.p-C{background:color-mix(in srgb,var(--c) 26%,transparent);border-color:color-mix(in srgb,var(--c) 60%,transparent)}
+.pb.p-GF{background:linear-gradient(90deg,color-mix(in srgb,var(--pg) 28%,transparent) 50%,color-mix(in srgb,var(--pf) 28%,transparent) 50%);border-color:color-mix(in srgb,var(--pg) 40%,var(--pf))}
+.pb.p-CF{background:linear-gradient(90deg,color-mix(in srgb,var(--pf) 28%,transparent) 50%,color-mix(in srgb,var(--pc) 28%,transparent) 50%);border-color:color-mix(in srgb,var(--pf) 40%,var(--pc))}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
+.chip{font:700 15px var(--title);letter-spacing:.3px;padding:5px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.pcount{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}.pcount span{font-size:14px;color:var(--muted)}
+.tablebox.p th,.tablebox.p td{padding:9px 5px}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .kpi b{display:block;font:700 28px/1.05 var(--title);font-variant-numeric:tabular-nums}.kpi span{color:var(--muted);font-size:13px}
@@ -54,13 +64,27 @@ tfoot td{font-weight:600;background:color-mix(in srgb,var(--acc) 8%,var(--card))
 <div class="wrap">
 <header><img alt="DMX" src="data:image/png;base64,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"><div><h1 id="t">DM10</h1><div class="sub" id="status">Cargando…</div></div></header>
 <input id="q" type="search" placeholder="Buscar jugador…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Buscar jugador">
+<div class="chips" id="chips"></div>
 <main id="app"></main>
 </div>
 <script>
 const $=s=>document.querySelector(s);
 const fmt=(n,d=1)=>Number(n).toLocaleString("es-ES",{minimumFractionDigits:d,maximumFractionDigits:d});
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let D=null,sort={key:"name",dir:1},fs={key:"fppg",dir:-1},query="";
+let D=null,sort={key:"name",dir:1},fs={key:"fppg",dir:-1},query="",pf="",ps={key:"sal",dir:-1},rs={key:"name",dir:1};
+const POS=["G","GF","F","CF","C"],rank=p=>{const i=POS.indexOf(String(p||"").toUpperCase());return i<0?9:i};
+const pb=p=>POS.includes(p)?`<span class="pb p-${p}">${p}</span>`:`<span class="empty">–</span>`;
+const nul=(v,d)=>v??(d>0?9999:-9999);
+const prk=(a,b,d)=>{const x=rank(a),y=rank(b);return x===9||y===9?x-y:(x-y)*d};
+function psort(list,k,d){
+  return [...list].sort((a,b)=>{
+    let r=k==="name"?String(a.name).localeCompare(String(b.name),"es")*d
+         :k==="pos"?prk(a.pos,b.pos,d)
+         :(nul(a[k],d)-nul(b[k],d))*d;
+    return r||b.sal-a.sal||String(a.name).localeCompare(String(b.name),"es");
+  });
+}
+const pdir=k=>k==="name"||k==="age"||k==="pos"?1:-1;
 const level=f=>f<=0?"bad":f<=10?"warn":"good";
 const bar=(f,cap,h)=>{const l=level(f);return `<div class="bar ${l==="good"?"":"bg-"+l}" ${h?`style="height:${h}px"`:""}><i style="width:${Math.max(0,Math.min(100,f/cap*100))}%"></i></div>`};
 const short=n=>String(n).replace(/\s*\([^)]*\)\s*$/,"");
@@ -82,43 +106,56 @@ function listView(){
    <th class="num" data-s="libre">Libre M${arrow("libre")}</th><th class="num" data-s="n">Jug.${arrow("n")}</th></tr></thead><tbody>${rows}</tbody></table></div>
   <div class="note">Toca un equipo para ver su plantilla. Pulsa las cabeceras para ordenar.</div>`;
 }
-function ptable(list,first){
-  return list.map(p=>`<tr><td class="nm">${esc(p.name)}<span class="pos">${esc(p.pos||"")}</span></td>
-   <td class="num">${fmt(p.sal)} M</td><td class="num"><span class="badge y${p.yrs}">${p.yrs??"–"}</span></td><td class="num">${p.age??"–"}</td></tr>`).join("");
+function ptable(list){
+  return list.map(p=>`<tr><td>${pb(p.pos)}</td><td class="nm">${esc(p.name)}</td>
+   <td class="num">${fmt(p.sal)}</td><td class="num"><span class="badge y${p.yrs}">${p.yrs??"–"}</span></td><td class="num">${p.age??"–"}</td></tr>`).join("");
 }
 const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 function libresView(){
-  const L=[...(D.libres||[])],k=fs.key,d=fs.dir;
-  L.sort((a,b)=>k==="name"?a.name.localeCompare(b.name,"es")*d:((a[k]??(d>0?999:-999))-(b[k]??(d>0?999:-999)))*d);
+  const k=fs.key,d=fs.dir,L=[...(D.libres||[])].sort((a,b)=>{
+    const r=k==="name"?a.name.localeCompare(b.name,"es")*d:k==="pos"?prk(a.pos,b.pos,d):(nul(a[k],d)-nul(b[k],d))*d;
+    return r||(b.fppg??-99)-(a.fppg??-99);
+  });
   const ar=x=>fs.key===x?(fs.dir>0?" ↑":" ↓"):"";
-  const rows=L.map(p=>`<tr><td class="nm">${esc(p.name)}<span class="pos">${esc(p.pos||"")}${p.inj?" · "+esc(p.inj):""}</span></td>
+  const rows=L.map(p=>`<tr><td>${pb(p.pos)}</td><td class="nm">${esc(p.name)}${p.inj?`<span class="pos">${esc(p.inj)}</span>`:""}</td>
    <td class="num">${p.fppg!=null?fmt(p.fppg):"–"}</td><td class="num">${p.fppm!=null?fmt(p.fppm,2):"–"}</td><td class="num">${p.age??"–"}</td></tr>`).join("");
   return `<a class="btn" href="#">‹ Todos los equipos</a>
   <div class="head"><h2>Agentes libres</h2><div class="big">${L.length} <span class="sub">sin equipo</span></div></div>
-  <div class="tablebox"><table><thead><tr><th data-f="name">Jugador${ar("name")}</th><th class="num" data-f="fppg">FPPG${ar("fppg")}</th><th class="num" data-f="fppm">FPPM${ar("fppm")}</th><th class="num" data-f="age">Edad${ar("age")}</th></tr></thead>
-  <tbody>${rows||`<tr><td colspan="4" class="empty">No hay agentes libres.</td></tr>`}</tbody></table></div>`;
+  <div class="tablebox p"><table><thead><tr><th data-f="pos">Pos.${ar("pos")}</th><th data-f="name">Jugador${ar("name")}</th><th class="num" data-f="fppg">FPPG${ar("fppg")}</th><th class="num" data-f="fppm">FPPM${ar("fppm")}</th><th class="num" data-f="age">Edad${ar("age")}</th></tr></thead>
+  <tbody>${rows||`<tr><td colspan="5" class="empty">No hay agentes libres.</td></tr>`}</tbody></table></div>`;
 }
 function searchView(){
   const toks=norm(query).split(/\s+/).filter(Boolean),first=norm(query).trim();
   const all=[...D.teams.flatMap(t=>t.players.map(p=>({...p,team:t}))),...(D.libres||[]).map(p=>({...p,team:null}))];
-  const hits=all.filter(p=>{const n=norm(p.name);return toks.every(x=>n.includes(x))});
-  hits.sort((a,b)=>(norm(a.name).startsWith(first)?0:1)-(norm(b.name).startsWith(first)?0:1)||a.name.localeCompare(b.name,"es"));
-  const rows=hits.slice(0,100).map(p=>`<tr><td class="nm">${esc(p.name)}<span class="pos">${esc(p.pos||"")}</span></td>
+  let hits=all.filter(p=>(!pf||String(p.pos).toUpperCase()===pf)&&toks.every(x=>norm(p.name).includes(x)));
+  const k=rs.key,d=rs.dir;
+  hits.sort((a,b)=>{
+    let r;
+    if(k==="name")r=(norm(a.name).startsWith(first)?0:1)-(norm(b.name).startsWith(first)?0:1)||a.name.localeCompare(b.name,"es")*d;
+    else if(k==="pos")r=prk(a.pos,b.pos,d);
+    else if(k==="team")r=(a.team?short(a.team.name):"~").localeCompare(b.team?short(b.team.name):"~","es")*d;
+    else r=(nul(a.team?a[k]:null,d)-nul(b.team?b[k]:null,d))*d;
+    return r||a.name.localeCompare(b.name,"es");
+  });
+  const MAX=200,ar=x=>rs.key===x?(rs.dir>0?" ↑":" ↓"):"";
+  const rows=hits.slice(0,MAX).map(p=>`<tr><td>${pb(p.pos)}</td><td class="nm">${esc(p.name)}</td>
    <td class="nm">${p.team?`<a class="tl" href="#team=${encodeURIComponent(key(p.team))}">${esc(short(p.team.name))}</a>`:`<span class="libre">Libre</span>`}</td>
-   <td class="num">${p.team?fmt(p.sal)+" M":"–"}</td><td class="num">${p.team?`<span class="badge y${p.yrs}">${p.yrs??"–"}</span>`:"–"}</td></tr>`).join("");
-  return `<div class="sub" style="margin-bottom:8px">${hits.length} resultado${hits.length===1?"":"s"}${hits.length>100?" · mostrando los 100 primeros, afina la búsqueda":""}</div>
-  <div class="tablebox"><table><thead><tr><th class="ns">Jugador</th><th class="ns">Equipo</th><th class="num ns">Salario</th><th class="num ns">Años</th></tr></thead>
-  <tbody>${rows||`<tr><td colspan="4" class="empty">Ningún jugador encontrado.</td></tr>`}</tbody></table></div>`;
+   <td class="num">${p.team?fmt(p.sal):"–"}</td><td class="num">${p.team?`<span class="badge y${p.yrs}">${p.yrs??"–"}</span>`:"–"}</td></tr>`).join("");
+  return `<div class="sub" style="margin-bottom:8px">${hits.length} resultado${hits.length===1?"":"s"}${pf?" · posición "+pf:""}${hits.length>MAX?` · mostrando los ${MAX} primeros, afina la búsqueda`:""}</div>
+  <div class="tablebox p"><table><thead><tr><th data-r="pos">Pos.${ar("pos")}</th><th data-r="name">Jugador${ar("name")}</th><th data-r="team">Equipo${ar("team")}</th><th class="num" data-r="sal">Sal. M${ar("sal")}</th><th class="num" data-r="yrs">Años${ar("yrs")}</th></tr></thead>
+  <tbody>${rows||`<tr><td colspan="5" class="empty">Ningún jugador encontrado.</td></tr>`}</tbody></table></div>`;
 }
 function teamView(k){
   const t=D.teams.find(x=>key(x)===k);
   if(!t)return `<a class="btn" href="#">‹ Todos los equipos</a><p class="empty">Equipo no encontrado.</p>`;
-  const cap=D.meta.cap,max=D.meta.rosterMax,P=[...t.players].sort((a,b)=>b.sal-a.sal||a.name.localeCompare(b.name,"es"));
+  const cap=D.meta.cap,max=D.meta.rosterMax,P=psort(t.players,ps.key,ps.dir),ar=x=>ps.key===x?(ps.dir>0?" ↑":" ↓"):"";
   const tot=P.reduce((s,p)=>s+p.sal,0);
   const warn=P.length>max?`<div class="err">Más de ${max} jugadores en la plantilla.</div>`:t.libre<0?`<div class="err">Cap superado en ${fmt(-t.libre)} M.</div>`:"";
   const fin=Object.entries(t.fin||{}).map(([l,v])=>`<tr><td>${esc(l)}</td><td class="num">${fmt(v)} M</td></tr>`).join("");
-  const th=`<thead><tr><th class="ns">Jugador</th><th class="num ns">Salario</th><th class="num ns">Años</th><th class="num ns">Edad</th></tr></thead>`;
-  const R=(t.rights||[]).length?`<h3>Derechos</h3><div class="tablebox"><table>${th}<tbody>${ptable(t.rights)}</tbody></table></div>`:"";
+  const th0=`<thead><tr><th class="ns">Pos.</th><th class="ns">Jugador</th><th class="num ns">Sal. M</th><th class="num ns">Años</th><th class="num ns">Edad</th></tr></thead>`;
+  const th=`<thead><tr><th data-p="pos">Pos.${ar("pos")}</th><th data-p="name">Jugador${ar("name")}</th><th class="num" data-p="sal">Sal. M${ar("sal")}</th><th class="num" data-p="yrs">Años${ar("yrs")}</th><th class="num" data-p="age">Edad${ar("age")}</th></tr></thead>`;
+  const cnt=POS.map(c=>[c,t.players.filter(p=>p.pos===c).length]).filter(x=>x[1]);
+  const R=(t.rights||[]).length?`<h3>Derechos</h3><div class="tablebox p"><table>${th0}<tbody>${ptable(t.rights)}</tbody></table></div>`:"";
   const pk=[...(t.picks||[])].sort((a,b)=>a.year-b.year||a.rnd-b.rnd||(a.pick??999)-(b.pick??999));
   const PK=pk.length?`<h3>Picks</h3><div class="tablebox"><table><thead><tr><th class="ns">Ronda</th><th class="num ns">Pick</th><th class="ns">Origen</th><th class="num ns">Salario</th></tr></thead><tbody>${pk.map(p=>`<tr><td>${p.year} · R${p.rnd}</td><td class="num">${p.pick!=null?"#"+p.pick:"–"}</td>
    <td class="nm">${p.from?esc(short(p.from)):`<span class="empty">Propio</span>`}</td><td class="num">${p.sal!=null?fmt(p.sal)+" M":"–"}</td></tr>`).join("")}</tbody></table></div>`:"";
@@ -127,24 +164,31 @@ function teamView(k){
   return `<a class="btn" href="#">‹ Todos los equipos</a>
   <div class="head"><h2>${esc(short(t.name))}</h2><div class="sub">${esc(t.gm||"")}${t.record?" · Récord "+esc(t.record):""}</div>
    <div class="big c-${level(t.libre)}">${fmt(t.libre)} M <span class="sub">libre de ${fmt(cap,0)} M</span></div>${bar(t.libre,cap,10)}
-   <div class="meta"><span>${P.length} de ${max} jugadores</span><span>Salarios ${fmt(t.salarios)} M</span></div>${warn}</div>
-  <div class="tablebox"><table>${th}<tbody>${ptable(P)||`<tr><td colspan="4" class="empty">Sin jugadores.</td></tr>`}</tbody>
-   <tfoot><tr><td>Total</td><td class="num">${fmt(tot)} M</td><td></td><td></td></tr></tfoot></table></div>
+   <div class="meta"><span>${P.length} de ${max} jugadores</span><span>Salarios ${fmt(t.salarios)} M</span></div>
+   <div class="pcount">${cnt.map(([c,n])=>`${pb(c)}<span>${n}</span>`).join("")}</div>${warn}</div>
+  <div class="tablebox p"><table>${th}<tbody>${ptable(P)||`<tr><td colspan="5" class="empty">Sin jugadores.</td></tr>`}</tbody>
+   <tfoot><tr><td></td><td>Total</td><td class="num">${fmt(tot)}</td><td></td><td></td></tr></tfoot></table></div>
   ${R}${PK}${CT}${fin?`<h3>Finanzas</h3><div class="tablebox"><table><tbody>${fin}</tbody></table></div>`:""}`;
 }
+function chips(){
+  $("#chips").innerHTML=POS.map(c=>`<button class="chip${pf===c?" on":""}" data-c="${c}">${c}</button>`).join("");
+}
 function render(){
-  if(!D)return;
+  if(!D)return;chips();
   const h=decodeURIComponent(location.hash.slice(1));
-  $("#app").innerHTML=query.trim()?searchView():h.startsWith("team=")?teamView(h.slice(5)):h==="libres"?libresView():listView();
+  $("#app").innerHTML=(query.trim()||pf)?searchView():h.startsWith("team=")?teamView(h.slice(5)):h==="libres"?libresView():listView();
 }
 document.addEventListener("click",e=>{
-  const th=e.target.closest("th[data-s]"),r=e.target.closest("tr[data-t]"),fh=e.target.closest("th[data-f]");
-  if(fh){const k=fh.dataset.f;fs=fs.key===k?{key:k,dir:-fs.dir}:{key:k,dir:k==="name"||k==="age"?1:-1};render()}
+  const th=e.target.closest("th[data-s]"),r=e.target.closest("tr[data-t]"),fh=e.target.closest("th[data-f]"),ph=e.target.closest("th[data-p]"),rh=e.target.closest("th[data-r]"),ch=e.target.closest("button[data-c]");
+  if(ch){pf=pf===ch.dataset.c?"":ch.dataset.c;render()}
+  else if(ph){const k=ph.dataset.p;ps=ps.key===k?{key:k,dir:-ps.dir}:{key:k,dir:pdir(k)};render()}
+  else if(rh){const k=rh.dataset.r;rs=rs.key===k?{key:k,dir:-rs.dir}:{key:k,dir:k==="name"||k==="pos"||k==="team"?1:-1};render()}
+  else if(fh){const k=fh.dataset.f;fs=fs.key===k?{key:k,dir:-fs.dir}:{key:k,dir:k==="name"||k==="age"||k==="pos"?1:-1};render()}
   else if(th){const k=th.dataset.s;sort=sort.key===k?{key:k,dir:-sort.dir}:{key:k,dir:k==="name"?1:-1};render()}
   else if(r)location.hash="team="+encodeURIComponent(r.dataset.t);
 });
 document.addEventListener("keydown",e=>{if(e.key==="Enter"){const r=e.target.closest&&e.target.closest("tr[data-t]");if(r)location.hash="team="+encodeURIComponent(r.dataset.t)}});
-window.addEventListener("hashchange",()=>{query="";$("#q").value="";render();scrollTo(0,0)});
+window.addEventListener("hashchange",()=>{query="";pf="";$("#q").value="";render();scrollTo(0,0)});
 $("#q").addEventListener("input",e=>{query=e.target.value;render()});
 fetch("data.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{
   D=j;D.teams.forEach(t=>t.n=t.players.length);
