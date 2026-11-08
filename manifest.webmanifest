@@ -1,0 +1,25 @@
+{
+ "name": "DM10 · Liga",
+ "short_name": "DM10",
+ "description": "Plantillas, cap, picks y trades de la liga DM10",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#f7f0e6",
+ "theme_color": "#b0621f",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

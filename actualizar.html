@@ -12,7 +12,7 @@
 .wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px}h1{font-size:26px;margin:0 0 6px}
 p{margin:8px 0}.muted{color:var(--muted);font-size:14px}
 .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
-input[type=file]{width:100%;padding:18px 10px;border:2px dashed var(--acc);border-radius:10px;background:transparent;color:var(--ink)}
+#f{width:100%;padding:18px 10px;border:2px dashed var(--acc);border-radius:10px;background:transparent;color:var(--ink)}
 input[type=text]{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font-size:16px}
 button{font:600 16px system-ui;border:0;background:var(--acc);color:#fff;border-radius:8px;padding:11px 16px;width:100%;cursor:pointer}
 button:disabled{opacity:.4;cursor:default}.err{color:var(--bad);font-weight:600}.ok{color:var(--good);font-weight:600}
@@ -25,6 +25,8 @@ button:disabled{opacity:.4;cursor:default}.err{color:var(--bad);font-weight:600}
 <div class="box" id="res" hidden>
   <label class="muted">Estado mostrado en la app</label><input id="stand" type="text">
   <p id="sum"></p>
+  <p id="chg" class="muted"></p>
+  <details class="muted" style="margin-bottom:12px"><summary>Comparar con otro data.json (opcional)</summary><p>Normalmente no hace falta: se compara con el data.json publicado.</p><input id="prev" type="file" accept=".json"></details>
   <button id="dl">Descargar data.json</button>
 </div>
 </div>
@@ -139,8 +141,58 @@ function standFromName(n){
   const m=/(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)[_ ]+(\d{1,2})/i.exec(n);
   return m?`${+m[2]} de ${m[1].toLowerCase()}`:"";
 }
-let out=null;
+const nk2=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+const nkp=s=>nk2(s).replace(/[.'’]/g,"").replace(/-/g," ").replace(/\s+(jr|sr|ii|iii|iv)$/,"").replace(/\s+/g," ").trim();
+const tkey=t=>t.abbr||t.name,tshort=t=>String(t.name).replace(/\s*\([^)]*\)\s*$/,"").trim(),shortS=s=>String(s).replace(/\s*\([^)]*\)\s*$/,"").trim();
+const f1=n=>Number(n).toLocaleString("es-ES",{minimumFractionDigits:1,maximumFractionDigits:1});
+function diffSnap(prev,next){
+  const pidx=d=>{const m=new Map();for(const t of d.teams)for(const p of t.players)m.set(nkp(p.name),{t,p});return m};
+  const A=pidx(prev),B=pidx(next);
+  const libP=new Set((prev.libres||[]).map(p=>nkp(p.name))),libN=new Set((next.libres||[]).map(p=>nkp(p.name)));
+  const cutMap=new Map();for(const t of next.teams)for(const c of t.cuts||[]){const k=nkp(c.name);if(!cutMap.has(k))cutMap.set(k,new Set());cutMap.get(k).add(tkey(t))}
+  const pd=p=>`${p.name} (${p.pos||"?"}) · ${f1(p.sal)} M · ${p.yrs??"?"} año${p.yrs===1?"":"s"}`;
+  const trans=[],fich=[],cort=[],cont=[];
+  for(const [k,{t,p}] of B){const a=A.get(k);
+    if(!a)fich.push({k:tkey(t),name:tshort(t),text:pd(p)+(libP.has(k)?" · agente libre":"")});
+    else if(tkey(a.t)!==tkey(t)){
+      if(cutMap.get(k)?.has(tkey(a.t))){cort.push({k:tkey(a.t),name:tshort(a.t),text:pd(a.p)+" · cortado"});fich.push({k:tkey(t),name:tshort(t),text:pd(p)+" · agente libre"})}
+      else trans.push({from:a.t,to:t,text:pd(p)});
+    }
+    else if(a.p.sal!==p.sal||a.p.yrs!==p.yrs)cont.push({k:tkey(t),name:tshort(t),text:`${p.name}: ${f1(a.p.sal)} M · ${a.p.yrs??"?"}a → ${f1(p.sal)} M · ${p.yrs??"?"}a`});
+  }
+  for(const [k,{t,p}] of A)if(!B.has(k))cort.push({k:tkey(t),name:tshort(t),text:pd(p)+(cutMap.get(k)?.has(tkey(t))?" · cortado":libN.has(k)?" · ahora agente libre":"")});
+  const own=d=>{const m=new Map();for(const t of d.teams)for(const p of t.picks||[]){const o=p.from?nk2(shortS(p.from)):nk2(tshort(t));m.set(`${p.year}|${p.rnd}|${o}`,{t,p})}return m};
+  const PA=own(prev),PB=own(next);
+  for(const [id,{t,p}] of PB){const a=PA.get(id);
+    if(a&&tkey(a.t)!==tkey(t))trans.push({from:a.t,to:t,text:`Pick ${p.year} R${p.rnd}${p.pick!=null?" #"+p.pick:""} (origen: ${p.from?shortS(p.from):tshort(t)})`});
+  }
+  const groups=new Map();
+  for(const x of trans){const lo=tkey(x.from)<tkey(x.to)?x.from:x.to,hi=lo===x.from?x.to:x.from,id=tkey(lo)+"|"+tkey(hi);
+    if(!groups.has(id))groups.set(id,{a:{k:tkey(lo),name:tshort(lo)},b:{k:tkey(hi),name:tshort(hi)},aSends:[],bSends:[]});
+    const g=groups.get(id);(tkey(x.from)===g.a.k?g.aSends:g.bSends).push(x.text)}
+  const byName=(x,y)=>x.name.localeCompare(y.name,"es");
+  const entry={desde:prev.meta?.stand||"",hasta:next.meta.stand,trades:[...groups.values()],fichajes:fich.sort(byName),cortes:cort.sort(byName),contratos:cont.sort(byName)};
+  return{entry,counts:{trades:entry.trades.length,fichajes:fich.length,cortes:cort.length,contratos:cont.length}};
+}
+let base=null,prev=null,out=null;
 $=s=>document.querySelector(s);
+function refresh(){
+  if(!base)return;
+  const stand=$("#stand").value.trim(),hist=[...((prev&&prev.history)||[])];let info;
+  if(!prev||!prev.teams)info="Sin estado anterior: los cambios se mostrarán desde la próxima actualización.";
+  else if((prev.meta?.stand||"")===stand)info=`El estado coincide con el anterior («${stand}»): no se añaden cambios nuevos.`;
+  else{
+    const{entry,counts}=diffSnap(prev,{...base,meta:{...base.meta,stand}}),n=counts.trades+counts.fichajes+counts.cortes+counts.contratos;
+    if(n)hist.unshift(entry);
+    info=`Cambios desde «${prev.meta?.stand||"?"}»: ${counts.trades} trades, ${counts.fichajes} fichajes, ${counts.cortes} cortes, ${counts.contratos} contratos.`;
+  }
+  out={...base,meta:{...base.meta,stand},history:hist.slice(0,6)};
+  $("#chg").textContent=info;
+}
+async function loadPrev(){
+  try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.teams)return j}}catch(e){}
+  return null;
+}
 $("#f").addEventListener("change",async e=>{
   const file=e.target.files[0];if(!file)return;
   $("#res").hidden=true;$("#msg").className="muted";$("#msg").textContent="Leyendo…";
@@ -156,16 +208,24 @@ $("#f").addEventListener("change",async e=>{
       if(sin)avisoM=` (${sin} equipos sin coincidencia en Managers)`;
     }catch(err){avisoM=" (managers: "+err.message+")"}
     const season=/Season_(\d{4})_(\d{4})/.exec(file.name);
-    out={libres,meta:{liga:CONFIG.liga,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
+    base={libres,meta:{liga:CONFIG.liga,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
     $("#stand").value=standFromName(file.name)||new Date(file.lastModified).toLocaleDateString("es-ES",{day:"numeric",month:"long"});
+    if(!prev)prev=await loadPrev();
     const np=teams.reduce((s,t)=>s+t.players.length,0);
     const nk=teams.reduce((s,t)=>s+t.picks.length,0);
     $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores, ${nk} picks, ${libres.length} agentes libres, ${teams.filter(t=>t.rookie).length} GMs rookies</span>${(avisoL+avisoM)?`<br><span class="err">${avisoL+avisoM}</span>`:""}<br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
+    refresh();
     $("#msg").textContent=file.name;$("#res").hidden=false;
   }catch(err){$("#msg").className="err";$("#msg").textContent="Error: "+err.message}
 });
+$("#stand").addEventListener("input",refresh);
+$("#prev").addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const j=JSON.parse(await f.text());if(!j.teams)throw new Error("no es un data.json de la liga");prev=j;refresh()}
+  catch(err){$("#chg").textContent="data.json anterior no válido: "+err.message}
+});
 $("#dl").addEventListener("click",()=>{
-  out.meta.stand=$("#stand").value.trim();
+  refresh();
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:"application/json"}));
   a.download="data.json";document.body.appendChild(a);a.click();a.remove();
 });
