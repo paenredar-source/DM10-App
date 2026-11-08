@@ -26,7 +26,12 @@ button:disabled{opacity:.4;cursor:default}.err{color:var(--bad);font-weight:600}
   <label class="muted">Estado mostrado en la app</label><input id="stand" type="text">
   <p id="sum"></p>
   <p id="chg" class="muted"></p>
-  <details class="muted" style="margin-bottom:12px"><summary>Comparar con otro data.json (opcional)</summary><p>Normalmente no hace falta: se compara con el data.json publicado.</p><input id="prev" type="file" accept=".json"></details>
+  <div id="warn" hidden style="border:2px solid var(--bad);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+    <p class="err" style="margin:0 0 6px">⚠ No se ha podido cargar el data.json publicado.</p>
+    <p class="muted" style="margin:0 0 8px">Si descargas ahora, <b>se pierde el historial de cambios</b>. Abre esta página desde la dirección de la app (…/actualizar.html), no desde un archivo guardado, o elige abajo el data.json anterior.</p>
+    <label class="muted"><input type="checkbox" id="nohist"> Continuar sin historial (solo si es la primera vez)</label>
+  </div>
+  <details id="prevbox" class="muted" style="margin-bottom:12px"><summary>Comparar con otro data.json (opcional)</summary><p>Normalmente no hace falta: se compara con el data.json publicado.</p><input id="prev" type="file" accept=".json"></details>
   <button id="dl">Descargar data.json</button>
 </div>
 </div>
@@ -188,6 +193,9 @@ function refresh(){
   }
   out={...base,meta:{...base.meta,stand},history:hist.slice(0,200)};
   $("#chg").textContent=info;
+  const need=!prev||!prev.teams;
+  $("#warn").hidden=!need;if(need)$("#prevbox").open=true;
+  $("#dl").disabled=need&&!$("#nohist").checked;
 }
 async function loadPrev(){
   try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.teams)return j}}catch(e){}
@@ -219,6 +227,7 @@ $("#f").addEventListener("change",async e=>{
   }catch(err){$("#msg").className="err";$("#msg").textContent="Error: "+err.message}
 });
 $("#stand").addEventListener("input",refresh);
+$("#nohist").addEventListener("change",refresh);
 $("#prev").addEventListener("change",async e=>{
   const f=e.target.files[0];if(!f)return;
   try{const j=JSON.parse(await f.text());if(!j.teams)throw new Error("no es un data.json de la liga");prev=j;refresh()}
