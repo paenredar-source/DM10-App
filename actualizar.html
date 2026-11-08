@@ -186,7 +186,7 @@ function refresh(){
     if(n)hist.unshift(entry);
     info=`Cambios desde «${prev.meta?.stand||"?"}»: ${counts.trades} trades, ${counts.fichajes} fichajes, ${counts.cortes} cortes, ${counts.contratos} contratos.`;
   }
-  out={...base,meta:{...base.meta,stand},history:hist.slice(0,6)};
+  out={...base,meta:{...base.meta,stand},history:hist.slice(0,200)};
   $("#chg").textContent=info;
 }
 async function loadPrev(){

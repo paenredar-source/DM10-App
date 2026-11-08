@@ -59,6 +59,7 @@ details.cd{background:var(--card);border:1px solid var(--line);border-radius:10p
 details.cd summary{padding:11px 12px;font:700 19px var(--title);cursor:pointer;letter-spacing:.3px}.cb{padding:0 12px 10px}
 .cb ul{margin:4px 0 10px;padding-left:18px;font-size:15px}.cb li{margin:2px 0}
 .tcard{border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin:8px 0}.tcard .th{font:700 19px var(--title)}.tcard b{font-size:14px;color:var(--muted)}
+details.per{border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}details.per>summary{font-size:20px}details.per .cd{background:var(--paper)}
 .cb .tn{font:700 17px var(--title);margin-top:8px}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
@@ -151,17 +152,18 @@ function cambiosView(){
   const grp=list=>{const m=new Map();for(const x of list.filter(x=>inv(x.k))){if(!m.has(x.k))m.set(x.k,{n:x.name,i:[]});m.get(x.k).i.push(x.text)}return m};
   const byTeam=list=>[...grp(list)].map(([k,v])=>`<div class="tn">${tl(k,v.n)}</div>${ul(v.i)}`).join("");
   const sec=(title,list,open,html)=>list===0?"":`<details class="cd"${open?" open":""}><summary>${title} (${list})</summary><div class="cb">${html}</div></details>`;
-  const block=e=>{
+  const block=(e,i)=>{
     const T=e.trades.filter(x=>inv(x.a.k)||inv(x.b.k)),F=e.fichajes.filter(x=>inv(x.k)),C=e.cortes.filter(x=>inv(x.k)),K=e.contratos.filter(x=>inv(x.k));
     const trades=T.map(x=>`<div class="tcard"><div class="th">${tl(x.a.k,x.a.name)} ⇄ ${tl(x.b.k,x.b.name)}</div>${x.aSends.length?`<b>${esc(x.a.name)} envía</b>${ul(x.aSends)}`:""}${x.bSends.length?`<b>${esc(x.b.name)} envía</b>${ul(x.bSends)}`:""}</div>`).join("");
     const none=!T.length&&!F.length&&!C.length&&!K.length;
-    return `<h3>Del ${esc(e.desde||"?")} al ${esc(e.hasta||"?")}</h3>${none?`<p class="empty">Sin cambios${M?" para tu equipo":""}.</p>`:""}`
-      +sec("Trades",T.length,true,trades)+sec("Fichajes",F.length,false,byTeam(e.fichajes))+sec("Cortes y bajas",C.length,false,byTeam(e.cortes))+sec("Contratos modificados",K.length,false,byTeam(e.contratos));
+    const n=T.length+F.length+C.length+K.length;
+    return `<details class="cd per"${i===0?" open":""}><summary>Del ${esc(e.desde||"?")} al ${esc(e.hasta||"?")} <span class="empty">· ${n} cambio${n===1?"":"s"}</span></summary><div class="cb">${none?`<p class="empty">Sin cambios${M?" para tu equipo":""}.</p>`:""}`
+      +sec("Trades",T.length,i===0,trades)+sec("Fichajes",F.length,false,byTeam(e.fichajes))+sec("Cortes y bajas",C.length,false,byTeam(e.cortes))+sec("Contratos modificados",K.length,false,byTeam(e.contratos))+`</div></details>`;
   };
   return `<a class="btn" href="#">‹ Todos los equipos</a>
-  <div class="head"><h2>Cambios</h2><div class="sub">Qué ha cambiado entre una actualización de la tabla y la anterior.</div>
+  <div class="head"><h2>Cambios</h2><div class="sub">Historial de lo que ha cambiado entre cada actualización de la tabla y la anterior (${H.length} actualizaci${H.length===1?"ón guardada":"ones guardadas"}).</div>
    ${mine&&tTeam(mine)?`<div class="tools" style="margin:10px 0 0"><button class="chip${cs.mine?" on":""}" data-act="onlymine">Solo mi equipo</button></div>`:""}</div>
-  ${H.length?H.map(block).join(""):`<p class="empty">Aún no hay cambios registrados: aparecerán a partir de la próxima actualización.</p>`}`;
+  ${H.length?H.map((e,i)=>block(e,i)).join(""):`<p class="empty">Aún no hay cambios registrados: aparecerán a partir de la próxima actualización.</p>`}`;
 }
 let tr={a:"",b:"",sel:{a:new Set(),b:new Set()},ngm:{a:false,b:false}};
 const tTeam=k=>D.teams.find(t=>key(t)===k);
