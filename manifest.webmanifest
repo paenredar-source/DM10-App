@@ -1,7 +1,7 @@
 {
- "name": "DM10 · Liga",
- "short_name": "DM10",
- "description": "Plantillas, cap, picks y trades de la liga DM10",
+ "name": "Dynasty Mode · Ligas",
+ "short_name": "DM",
+ "description": "Plantillas, cap, picks y trades de las ligas Dynasty Mode",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

@@ -20,19 +20,19 @@ button:disabled{opacity:.4;cursor:default}.err{color:var(--bad);font-weight:600}
 </head>
 <body><div class="wrap">
 <h1>Actualizar datos de la liga</h1>
-<p class="muted">1. Elige el Excel de la liga (.xlsx / .xlsm). 2. Descarga <b>data.json</b>. 3. Sustituye <b>data.json</b> en GitHub: la app se actualiza sola. El Excel no sale de tu dispositivo.</p>
+<p class="muted">1. Elige el Excel de la liga (.xlsx / .xlsm). 2. Descarga <b>data-LIGA.json</b> (la liga se reconoce sola). 3. Sustituye ese archivo en GitHub: la app se actualiza sola. El Excel no sale de tu dispositivo.</p>
 <div class="box"><input id="f" type="file" accept=".xlsx,.xlsm"><div id="msg" class="muted" style="margin-top:10px"></div></div>
 <div class="box" id="res" hidden>
   <label class="muted">Estado mostrado en la app</label><input id="stand" type="text">
   <p id="sum"></p>
   <p id="chg" class="muted"></p>
   <div id="warn" hidden style="border:2px solid var(--bad);border-radius:10px;padding:10px 12px;margin-bottom:12px">
-    <p class="err" style="margin:0 0 6px">⚠ No se ha podido cargar el data.json publicado.</p>
-    <p class="muted" style="margin:0 0 8px">Si descargas ahora, <b>se pierde el historial de cambios</b>. Abre esta página desde la dirección de la app (…/actualizar.html), no desde un archivo guardado, o elige abajo el data.json anterior.</p>
+    <p class="err" style="margin:0 0 6px">⚠ No se ha podido cargar el archivo de datos publicado.</p>
+    <p class="muted" style="margin:0 0 8px">Si descargas ahora, <b>se pierde el historial de cambios</b>. Abre esta página desde la dirección de la app (…/actualizar.html), no desde un archivo guardado, o elige abajo el archivo de datos anterior.</p>
     <label class="muted"><input type="checkbox" id="nohist"> Continuar sin historial (solo si es la primera vez)</label>
   </div>
-  <details id="prevbox" class="muted" style="margin-bottom:12px"><summary>Comparar con otro data.json (opcional)</summary><p>Normalmente no hace falta: se compara con el data.json publicado.</p><input id="prev" type="file" accept=".json"></details>
-  <button id="dl">Descargar data.json</button>
+  <details id="prevbox" class="muted" style="margin-bottom:12px"><summary>Comparar con otro archivo de datos (opcional)</summary><p>Normalmente no hace falta: se compara con el archivo publicado de la misma liga.</p><input id="prev" type="file" accept=".json"></details>
+  <button id="dl">Descargar el archivo de datos</button>
 </div>
 </div>
 <script>
@@ -86,11 +86,12 @@ async function readSheet(get,name){
 const isStr=v=>typeof v==="string"&&v.trim()!=="";
 const num=v=>typeof v==="number"&&isFinite(v)?v:null;
 function extract(rows){
-  const teams=[];let cur=null,zone=null,fin=false,cut=false;
+  const teams=[];let cur=null,zone=null,fin=false,cut=false,ligaId="";
   const maxR=Math.max(...Object.keys(rows).map(Number));
   for(let r=1;r<=maxR;r++){
     const R=rows[r];if(!R)continue;
     if(/^DM\d+$/.test(R[1]||"")&&/^\d+\s*-\s*\d+$/.test(R[2]||"")&&isStr(R[20])){
+      if(!ligaId)ligaId=R[1];
       cur={abbr:R[3]||"",name:R[20].trim(),gm:((/\(([^)]*)\)\s*$/.exec(R[20])||[])[1]||""),record:R[2],fin:{},players:[],rights:[],picks:[],cuts:[]};
       teams.push(cur);zone="players";fin=false;cut=false;continue;
     }
@@ -116,11 +117,12 @@ function extract(rows){
       if(zone==="players")cur.players.push(p);else if(zone==="rights")cur.rights.push({name:p.name,pos:p.pos,sal:p.sal,yrs:p.yrs,age:p.age,fppg:p.fppg,fppm:p.fppm,mpg:p.mpg});
     }
   }
-  return teams.map(t=>{
+  const res=teams.map(t=>{
     const g=k=>Object.entries(t.fin).find(([l])=>l.toUpperCase().startsWith(k))?.[1];
     const sal=g("SALARIOS")??t.players.reduce((s,p)=>s+p.sal,0),libre=g("DINERO DISPONIBLE")??Math.round((CONFIG.cap-sal)*100)/100;
     return{...t,salarios:sal,libre};
   });
+  res.liga=ligaId;return res;
 }
 function extractLibres(rows){
   const H=rows[1]||{},ix={};for(const[k,v]of Object.entries(H))if(typeof v==="string")ix[v.trim()]=+k;
@@ -179,7 +181,7 @@ function diffSnap(prev,next){
   const entry={desde:prev.meta?.stand||"",hasta:next.meta.stand,trades:[...groups.values()],fichajes:fich.sort(byName),cortes:cort.sort(byName),contratos:cont.sort(byName)};
   return{entry,counts:{trades:entry.trades.length,fichajes:fich.length,cortes:cort.length,contratos:cont.length}};
 }
-let base=null,prev=null,out=null;
+let base=null,prev=null,out=null,ligaId="";
 $=s=>document.querySelector(s);
 function refresh(){
   if(!base)return;
@@ -197,8 +199,10 @@ function refresh(){
   $("#warn").hidden=!need;if(need)$("#prevbox").open=true;
   $("#dl").disabled=need&&!$("#nohist").checked;
 }
-async function loadPrev(){
-  try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.teams)return j}}catch(e){}
+async function loadPrev(id){
+  for(const f of [`data-${id}.json`,"data.json"]){
+    try{const r=await fetch(f,{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.teams&&(!j.meta||!j.meta.liga||j.meta.liga===id))return j}}catch(e){}
+  }
   return null;
 }
 $("#f").addEventListener("change",async e=>{
@@ -216,12 +220,13 @@ $("#f").addEventListener("change",async e=>{
       if(sin)avisoM=` (${sin} equipos sin coincidencia en Managers)`;
     }catch(err){avisoM=" (managers: "+err.message+")"}
     const season=/Season_(\d{4})_(\d{4})/.exec(file.name);
-    base={libres,meta:{liga:CONFIG.liga,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
+    ligaId=teams.liga||(/DM\d+/.exec(file.name)||[])[0]||CONFIG.liga;
+    base={libres,meta:{liga:ligaId,temporada:season?`${season[1]}-${season[2].slice(2)}`:"",stand:"",cap:CONFIG.cap,rosterMax:CONFIG.rosterMax},teams};
     $("#stand").value=standFromName(file.name)||new Date(file.lastModified).toLocaleDateString("es-ES",{day:"numeric",month:"long"});
-    if(!prev)prev=await loadPrev();
+    if(!prev)prev=await loadPrev(ligaId);
     const np=teams.reduce((s,t)=>s+t.players.length,0);
     const nk=teams.reduce((s,t)=>s+t.picks.length,0);
-    $("#sum").innerHTML=`<span class="ok">${teams.length} equipos, ${np} jugadores, ${nk} picks, ${libres.length} agentes libres, ${teams.filter(t=>t.rookie).length} GMs rookies</span>${(avisoL+avisoM)?`<br><span class="err">${avisoL+avisoM}</span>`:""}<br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
+    $("#sum").innerHTML=`<span class="ok">Liga ${ligaId}: ${teams.length} equipos, ${np} jugadores, ${nk} picks, ${libres.length} agentes libres, ${teams.filter(t=>t.rookie).length} GMs rookies</span>${(avisoL+avisoM)?`<br><span class="err">${avisoL+avisoM}</span>`:""}<br><span class="muted">${teams.slice(0,3).map(t=>t.name.replace(/\s*\(.*\)/,"")).join(", ")}…</span>`;
     refresh();
     $("#msg").textContent=file.name;$("#res").hidden=false;
   }catch(err){$("#msg").className="err";$("#msg").textContent="Error: "+err.message}
@@ -236,7 +241,7 @@ $("#prev").addEventListener("change",async e=>{
 $("#dl").addEventListener("click",()=>{
   refresh();
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:"application/json"}));
-  a.download="data.json";document.body.appendChild(a);a.click();a.remove();
+  a.download=`data-${ligaId}.json`;document.body.appendChild(a);a.click();a.remove();
 });
 </script>
 </body>

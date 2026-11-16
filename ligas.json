@@ -1,0 +1,20 @@
+{
+ "ligas": [
+  {
+   "id": "DM10",
+   "nombre": "DM10",
+   "color": "#b0621f",
+   "tema": "base",
+   "logo": "logo-DM10.png",
+   "data": "data-DM10.json",
+   "alt": "data.json"
+  },
+  {
+   "id": "DM4",
+   "nombre": "DM4",
+   "color": "#d34575",
+   "logo": "logo-DM4.png",
+   "data": "data-DM4.json"
+  }
+ ]
+}
